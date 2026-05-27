@@ -71,8 +71,8 @@ class WhereGenerator : public IGenerator<T> {
 
     IGenerator<T>* source_;
     std::function<bool(T)> predicate_;
-    Optional<T> buffer_;
-    bool buffered_;
+    mutable Optional<T> buffer_;
+    mutable bool buffered_;
 
     public:
 
@@ -140,6 +140,8 @@ class AppendGenerator : public IGenerator<T>{
 
     AppendGenerator(IGenerator<T>* source, T item): source_(source), item_(item), itemed_(false) {}
 
+    ~AppendGenerator() { delete source_; }
+
     bool hasNext() const override{
         return source_->hasNext() || !itemed_ ;
     }
@@ -156,3 +158,58 @@ class AppendGenerator : public IGenerator<T>{
 
 
 };
+
+template <typename T>
+class PrependGenerator : public IGenerator<T>{
+    private:
+    IGenerator<T>* source_;
+    T item_;
+    bool itemed_;
+
+    public:
+
+    PrependGenerator(IGenerator<T>* source, T item): source_(source), item_(item), itemed_(false) {}
+
+    ~PrependGenerator() { delete source_; }
+
+    bool hasNext() const override{
+        return source_->hasNext() || !itemed_ ;
+    }
+
+
+    T getNext() override {
+        if (!hasNext())
+            throw InvalidNextValue();
+        if (!itemed_){
+            itemed_ = true;
+            return item_;
+        }
+        return source_->getNext();
+        
+    }
+};
+
+template <typename T, typename U>
+class ZipGenerator : public IGenerator<std::pair<T, U>>{
+    private:
+
+    IGenerator<T>* left_;
+    IGenerator<U>* right_;
+
+    public:
+
+    ZipGenerator(IGenerator<T>* left, IGenerator<U>* right)
+        : left_(left), right_(right) {}
+
+    bool hasNext() const override{
+        return left_->hasNext() && right_->hasNext();
+    }
+
+    std::pair<T, U> getNext() override{
+        if(!hasNext){
+            throw InvalidNextValue();
+        }
+
+         return { left_->getNext(), right_->getNext() };
+    }
+}
