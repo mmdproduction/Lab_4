@@ -38,3 +38,69 @@ class FiniteGenerator: IGenerator<T>{
         seq.get(pos_++);
     }
 };
+
+template <typename T, typename U>
+class MapGenerator : public IGenerator<U> {
+    private:
+    
+    IGenerator<T>* source_;
+    std::function<U(T)> mapper_;
+
+    public:
+
+    MapGenerator(IGenerator<T>* source, std::function<U(T)> mapper)
+        : source_(source), mapper_(mapper) {}
+ 
+    ~MapGenerator() { delete source_; }
+ 
+    bool HasNext() const override { return source_->HasNext(); }
+ 
+    U GetNext() override {
+        if (!HasNext())
+            throw InvalidNextValue();
+        return mapper_(source_->GetNext());
+    }
+ 
+};
+
+
+template <typename T>
+class WhereGenerator : public IGenerator<T> {
+
+    private:
+
+    IGenerator<T>* source_;
+    std::function<bool(T)> predicate_;
+    Optional<T> buffer_;
+    bool buffered_;
+
+    public:
+
+    WhereGenerator(IGenerator<T>* source, std::function<bool(T)> predicate)
+        : source_(source), predicate_(predicate), buffered_(false) {}
+ 
+    ~WhereGenerator() { delete source_; }
+ 
+    bool HasNext() const override {
+        if (buffered_)
+            return true;
+        while (source_->HasNext()) {
+            T val = source_->GetNext();
+            if (predicate_(val)) {
+                buffer_ = Optional<T>::some(val);
+                buffered_ = true;
+                return true;
+            }
+        }
+        return false;
+    }
+ 
+    T GetNext() override {
+        if (!HasNext())
+            throw InvalidNextValue();
+        buffered_ = false;
+        return buffer_.value();
+    }
+};
+
+
