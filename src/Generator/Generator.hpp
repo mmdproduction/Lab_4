@@ -7,13 +7,13 @@ template<typename T>
 class IGenerator{
     public:
 
-    virtual T getNext() = 0;
-    virtual bool hasNext() const = 0;
+    virtual T get_next() = 0;
+    virtual bool has_next() const = 0;
  
-    Optional<T> tryGetNext() {
-        if (!hasNext())
+    Optional<T> try_get_next() {
+        if (!has_next())
             return Optional<T>::none();
-        return Optional<T>::some(getNext());
+        return Optional<T>::some(get_next());
     }
 };
 
@@ -27,12 +27,12 @@ class FiniteGenerator: IGenerator<T>{
 
     FiniteGenerator(Sequence<T>& seq) : seq_(seq), pos(0){
     }
-    bool hasNext() const override {
+    bool has_next() const override {
         return pos_ < seq_.getLength();
     }
 
-    T getNext() override{
-        if(!hasNext()){
+    T get_next() override{
+        if(!has_next()){
             throw InvalidNextValue();
         }
         seq.get(pos_++);
@@ -53,12 +53,12 @@ class MapGenerator : public IGenerator<U> {
  
     ~MapGenerator() { delete source_; }
  
-    bool hasNext() const override { return source_->hasNext(); }
+    bool has_next() const override { return source_->has_next(); }
  
-    U getNext() override {
-        if (!hasNext())
+    U get_next() override {
+        if (!has_next())
             throw InvalidNextValue();
-        return mapper_(source_->getNext());
+        return mapper_(source_->get_next());
     }
  
 };
@@ -81,11 +81,11 @@ class WhereGenerator : public IGenerator<T> {
  
     ~WhereGenerator() { delete source_; }
  
-    bool hasNext() const override {
+    bool has_next() const override {
         if (buffered_)
             return true;
-        while (source_->hasNext()) {
-            T val = source_->getNext();
+        while (source_->has_next()) {
+            T val = source_->get_next();
             if (predicate_(val)) {
                 buffer_ = Optional<T>::some(val);
                 buffered_ = true;
@@ -95,8 +95,8 @@ class WhereGenerator : public IGenerator<T> {
         return false;
     }
  
-    T getNext() override {
-        if (!hasNext())
+    T get_next() override {
+        if (!has_next())
             throw InvalidNextValue();
         buffered_ = false;
         return buffer_.value();
@@ -116,14 +116,14 @@ class ConcatGenerator : public IGenerator<T> {
 
     ~ConcatGenerator() { delete first_; delete second_; }
  
-    bool hasNext() const override {
-        return first_->hasNext() || second_->hasNext();
+    bool has_next() const override {
+        return first_->has_next() || second_->has_next();
     }
  
-    T getNext() override {
-        if (!hasNext())
+    T get_next() override {
+        if (!has_next())
             throw InvalidNextValue();
-        if (first_->hasNext())
+        if (first_->has_next())
             return first_->getNext();
         return second_->getNext();
     }
@@ -142,15 +142,15 @@ class AppendGenerator : public IGenerator<T>{
 
     ~AppendGenerator() { delete source_; }
 
-    bool hasNext() const override{
-        return source_->hasNext() || !itemed_ ;
+    bool has_next() const override{
+        return source_->has_next() || !itemed_ ;
     }
 
 
     T getNext() override {
-        if (!hasNext())
+        if (!has_next())
             throw InvalidNextValue();
-        if (source_->hasNext())
+        if (source_->has_next())
             return source_->getNext();
         itemed_ = true;
         return item_;
@@ -172,13 +172,13 @@ class PrependGenerator : public IGenerator<T>{
 
     ~PrependGenerator() { delete source_; }
 
-    bool hasNext() const override{
-        return source_->hasNext() || !itemed_ ;
+    bool has_next() const override{
+        return source_->has_next() || !itemed_ ;
     }
 
 
     T getNext() override {
-        if (!hasNext())
+        if (!has_next())
             throw InvalidNextValue();
         if (!itemed_){
             itemed_ = true;
@@ -201,12 +201,12 @@ class ZipGenerator : public IGenerator<std::pair<T, U>>{
     ZipGenerator(IGenerator<T>* left, IGenerator<U>* right)
         : left_(left), right_(right) {}
 
-    bool hasNext() const override{
-        return left_->hasNext() && right_->hasNext();
+    bool has_next() const override{
+        return left_->has_next() && right_->has_next();
     }
 
     std::pair<T, U> getNext() override{
-        if(!hasNext){
+        if(!has_next){
             throw InvalidNextValue();
         }
 
