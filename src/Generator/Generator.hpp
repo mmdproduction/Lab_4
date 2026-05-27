@@ -42,7 +42,7 @@ class FiniteGenerator: IGenerator<T>{
 template <typename T, typename U>
 class MapGenerator : public IGenerator<U> {
     private:
-    
+
     IGenerator<T>* source_;
     std::function<U(T)> mapper_;
 
@@ -100,6 +100,32 @@ class WhereGenerator : public IGenerator<T> {
             throw InvalidNextValue();
         buffered_ = false;
         return buffer_.value();
+    }
+};
+
+template <typename T>
+class ConcatGenerator : public IGenerator<T> {
+    private:
+
+    IGenerator<T>* first_; 
+    IGenerator<T>* second_;
+
+    public:
+    ConcatGenerator(IGenerator<T>* first, IGenerator<T>* second)
+        : first_(first), second_(second) {}
+
+    ~ConcatGenerator() { delete first_; delete second_; }
+ 
+    bool HasNext() const override {
+        return first_->HasNext() || second_->HasNext();
+    }
+ 
+    T GetNext() override {
+        if (!HasNext())
+            throw InvalidNextValue();
+        if (first_->HasNext())
+            return first_->GetNext();
+        return second_->GetNext();
     }
 };
 
