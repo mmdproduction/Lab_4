@@ -53,12 +53,12 @@ class MapGenerator : public IGenerator<U> {
  
     ~MapGenerator() { delete source_; }
  
-    bool HasNext() const override { return source_->HasNext(); }
+    bool hasNext() const override { return source_->hasNext(); }
  
-    U GetNext() override {
-        if (!HasNext())
+    U getNext() override {
+        if (!hasNext())
             throw InvalidNextValue();
-        return mapper_(source_->GetNext());
+        return mapper_(source_->getNext());
     }
  
 };
@@ -81,11 +81,11 @@ class WhereGenerator : public IGenerator<T> {
  
     ~WhereGenerator() { delete source_; }
  
-    bool HasNext() const override {
+    bool hasNext() const override {
         if (buffered_)
             return true;
-        while (source_->HasNext()) {
-            T val = source_->GetNext();
+        while (source_->hasNext()) {
+            T val = source_->getNext();
             if (predicate_(val)) {
                 buffer_ = Optional<T>::some(val);
                 buffered_ = true;
@@ -95,8 +95,8 @@ class WhereGenerator : public IGenerator<T> {
         return false;
     }
  
-    T GetNext() override {
-        if (!HasNext())
+    T getNext() override {
+        if (!hasNext())
             throw InvalidNextValue();
         buffered_ = false;
         return buffer_.value();
@@ -116,17 +116,43 @@ class ConcatGenerator : public IGenerator<T> {
 
     ~ConcatGenerator() { delete first_; delete second_; }
  
-    bool HasNext() const override {
-        return first_->HasNext() || second_->HasNext();
+    bool hasNext() const override {
+        return first_->hasNext() || second_->hasNext();
     }
  
-    T GetNext() override {
-        if (!HasNext())
+    T getNext() override {
+        if (!hasNext())
             throw InvalidNextValue();
-        if (first_->HasNext())
-            return first_->GetNext();
-        return second_->GetNext();
+        if (first_->hasNext())
+            return first_->getNext();
+        return second_->getNext();
     }
 };
 
+template <typename T>
+class AppendGenerator : public IGenerator<T>{
+    private:
+    IGenerator<T>* source_;
+    T item_;
+    bool itemed_;
 
+    public:
+
+    AppendGenerator(IGenerator<T>* source, T item): source_(source), item_(item), itemed_(false) {}
+
+    bool hasNext() const override{
+        return source_->hasNext() || !itemed_ ;
+    }
+
+
+    T getNext() override {
+        if (!hasNext())
+            throw InvalidNextValue();
+        if (source_->hasNext())
+            return source_->getNext();
+        itemed_ = true;
+        return item_;
+    }
+
+
+};
