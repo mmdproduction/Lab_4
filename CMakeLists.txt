@@ -11,6 +11,9 @@ set(GUI
     ${CMAKE_CURRENT_SOURCE_DIR}/gui/
     )
 set(HEADER_DIR
+    ${SRC}Optional
+    ${SRC}Exception
+    ${SRC}Generator
     ${CMAKE_CURRENT_SOURCE_DIR}/externals/lab_2/src
     ${CMAKE_CURRENT_SOURCE_DIR}/externals/lab_2/src/Sequence
     ${CMAKE_CURRENT_SOURCE_DIR}/externals/lab_2/src/Sequence/LazySequence/
@@ -22,7 +25,9 @@ set(HEADER_DIR
 )
 
 set(HEADER_FILES
-
+    ${SRC}Optional/Optional.hpp
+    ${SRC}Exception/Exception.hpp
+    ${SRC}Generator/Generator.hpp
 )
 
 set(TEMPLATE_FILES
@@ -30,11 +35,11 @@ set(TEMPLATE_FILES
 )
 
 set(SOURCE_FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/gui/main.cpp
+    
 )
 
 set(TEST_SOURCE_FILES
-
+    tests/OptionalTest.cpp
 )
 
 add_subdirectory(externals/lab_2 lab_2_build)
@@ -82,23 +87,21 @@ target_include_directories(main PUBLIC
     ${PROJECT_NAME}
 )
 
-#enable_testing()
+enable_testing()
 
 
-#add_executable(test_3
-#    ${TEST_SOURCE_FILES}
-#)
-#
-#target_link_libraries(test_3 PRIVATE 
-#    ${PROJECT_NAME} 
-#    gtest_main
-#)
-#
-#
-#target_include_directories(test_3 PRIVATE ${HEADER_DIR})
-#
-#include(GoogleTest)
-#gtest_discover_tests(test_3
-#)
+add_executable(test_4
+    ${TEST_SOURCE_FILES}
+)
 
-target_compile_options(main PRIVATE -g3 -O0)
+target_link_libraries(test_4 PRIVATE 
+    ${PROJECT_NAME} 
+    gtest_main
+)
+
+
+target_include_directories(test_4 PRIVATE ${HEADER_DIR})
+
+include(GoogleTest)
+gtest_discover_tests(test_4
+)
