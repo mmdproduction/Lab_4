@@ -296,7 +296,7 @@ class ReccurentGenerator : public IGenerator<T>{
 
 
 template <typename T>
-class DefferenceGenerator : public {
+class DifferenceGenerator : public IGenerator<T>{
     private:
     ArraySequence<T>* diagonal_;
  
@@ -340,4 +340,4 @@ class DefferenceGenerator : public {
         return new DifferenceGenerator<T>(*diagonal_);
     }
 
-}
+};

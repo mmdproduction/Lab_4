@@ -95,7 +95,7 @@ private:
 
     T read(){
         if (is_end_of_stream())
-            throw
+            throw EndOfStream();
         switch (source_)
         {
         case Source::Sequence : return seq_->get(pos_++);
@@ -103,6 +103,7 @@ private:
         case Source::String : return 
         case Source::File : return seq_->get(pos_++);
         }
+        throw EndOfStream();
     }
 
     ReadOnlyStream<T>& operator>>(T& value) {
@@ -111,4 +112,80 @@ private:
     }
 
     size_t get_position() const {return pos_; }
+
+};
+
+
+template <typename T>
+class WriteOnlyStream{
+    private:
+
+    enum class Sink {Sequence, File, Buffer}
+
+    Sequence<T>*     seq_;
+    std::string      buffer_;
+    size_t           pos_;
+    Sink             sink_;
+    std::string      path_;
+    std::ofstream    file_;
+    Serializer<T>    serializer_;
+
+
+    public:
+
+     WriteOnlyStream(Sequence<T>* seq)
+        : seq_(seq), pos_(0), source_(Sink::Sequence) {}
+ 
+    
+    WriteOnlyStream(const std::string& path, Serializer<T> serializer)
+        : seq_(nullptr), pos_(0), source_(Sink::File),
+          path_(path), serializer_(serializer) {}
+ 
+    WriteOnlyStream(Serializer<T> serializer)
+        : seq_(nullptr), pos_(0), source_(Sink::Buffer),
+          serializer_(serializer) {}
+
+    void open() {
+        if (source_ == Sink::File) {
+            file_.open(path_);
+            if (!file_.is_open())
+                throw InvalidFilePath(path_);
+        }
+    }
+ 
+    void close() {
+        if (file_.is_open())
+            file_.close();
+    }
+
+    size_t write(const T& item) {
+        switch (source_) {
+            case Sink::Sequence:
+                seq_->append(item);
+                break;
+            case Sink::File:
+                if (!file_.is_open())
+                    throw InvalidFilePath(path_);
+                file_ << serializer_(item) << "\n";
+                break;
+            case Sink::Buffer:
+                buffer_ += serializer_(item) + "\n";
+                break;
+        }
+        return ++pos_;
+    }
+
+    WriteOnlyStream<T>& operator<<(const T& item) {
+        write(item);
+        return *this;
+    }
+
+    size_t get_position() const {return pos_; }
+
+    const std::string& get_buffer() const {
+        if (source_ != Sink::Buffer)
+            throw std::runtime_error("WriteOnlyStream: not a buffer stream");
+        return buffer_;
+    }
+
 };

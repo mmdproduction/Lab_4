@@ -77,3 +77,10 @@ class InvalidFilePath : public Exception{
     InvalidFilePath(const std::string path, const std::source_location& loc = std::source_location::current())
         : Exception(loc.function_name(), loc.file_name(), loc.line(), 
         std::format("Невозможно открыть файл! Путь: {}!", path)){}
+};
+
+class EndOfStream : public Exception{
+    public:
+    explicit EndOfStream( const std::source_location& loc = std::source_location::current())
+        : Exception(loc.function_name(), loc.file_name(), loc.line(), "Конец потока чтения!"){}
+};
