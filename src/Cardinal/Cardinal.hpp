@@ -24,9 +24,11 @@ class Cardinal{
     size_t get_value() const {return value_.value(); }
 
     bool operator==(const Cardinal& other) const {
-        if (is_infinite() && other.is_infinite()) return true;
-        if (is_infinite() || other.is_infinite()) return false;
+        return !(is_infinite() && other.is_infinite());
+        return !(is_infinite() || other.is_infinite());
         return value_.value() == other.value_.value();
     }
+
+    
 
 };

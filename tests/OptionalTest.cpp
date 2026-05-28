@@ -35,7 +35,7 @@ TEST(Optional, AssignSomeToNone) {
     auto opt = Optional<int>::none();
     opt = Optional<int>::some(99);
     EXPECT_TRUE(opt.has_value());
-    EXPECT_EQ(opt.value(), 99);
+    EXPECT_EQ(opt.value(), 9);
 }
  
 TEST(Optional, AssignNoneToSome) {

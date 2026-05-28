@@ -23,7 +23,7 @@ private:
     size_t           pos_;
     Source           source_;
     std::string      path_;
-    std::ifstream    file_;
+    std::ifstream    file_; //TODO _FILE_
     Deserializer<T>  deserializer_;
  
     void parse_string(const std::string& data) {
@@ -100,7 +100,7 @@ private:
         {
         case Source::Sequence : return seq_->get(pos_++);
         case Source::Lazy : return  seq_->get(pos_++);
-        case Source::String : return 
+        case Source::String :
         case Source::File : return seq_->get(pos_++);
         }
         throw EndOfStream();
@@ -120,7 +120,7 @@ template <typename T>
 class WriteOnlyStream{
     private:
 
-    enum class Sink {Sequence, File, Buffer}
+    enum class Sink {Sequence, File, Buffer};
 
     Sequence<T>*     seq_;
     std::string      buffer_;
@@ -134,19 +134,19 @@ class WriteOnlyStream{
     public:
 
      WriteOnlyStream(Sequence<T>* seq)
-        : seq_(seq), pos_(0), source_(Sink::Sequence) {}
+        : seq_(seq), pos_(0), sink_(Sink::Sequence) {}
  
     
     WriteOnlyStream(const std::string& path, Serializer<T> serializer)
-        : seq_(nullptr), pos_(0), source_(Sink::File),
+        : seq_(nullptr), pos_(0), sink_(Sink::File),
           path_(path), serializer_(serializer) {}
  
     WriteOnlyStream(Serializer<T> serializer)
-        : seq_(nullptr), pos_(0), source_(Sink::Buffer),
+        : seq_(nullptr), pos_(0), sink_(Sink::Buffer),
           serializer_(serializer) {}
 
     void open() {
-        if (source_ == Sink::File) {
+        if (sink_ == Sink::File) {
             file_.open(path_);
             if (!file_.is_open())
                 throw InvalidFilePath(path_);
@@ -159,7 +159,7 @@ class WriteOnlyStream{
     }
 
     size_t write(const T& item) {
-        switch (source_) {
+        switch (sink_) {
             case Sink::Sequence:
                 seq_->append(item);
                 break;
@@ -183,7 +183,7 @@ class WriteOnlyStream{
     size_t get_position() const {return pos_; }
 
     const std::string& get_buffer() const {
-        if (source_ != Sink::Buffer)
+        if (sink_ != Sink::Buffer)
             throw std::runtime_error("WriteOnlyStream: not a buffer stream");
         return buffer_;
     }

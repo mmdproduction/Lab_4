@@ -16,7 +16,7 @@ LazySequence<double> predict(ReadOnlyStream<double>& input,
     if (seed.getLength() == 0)
         throw EmptyStream();
  
-    auto* gen = new FiniteDifferenceGenerator<double>(seed);
+    auto* gen = new DifferenceGenerator<double>(seed);
     LazySequence<double> series(seed, gen);
 
     size_t offset = seed.getLength();

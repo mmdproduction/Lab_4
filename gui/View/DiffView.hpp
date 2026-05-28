@@ -34,18 +34,18 @@ public:
                    float x_, float y_, float w_, float h_)
         : model(m), controller(c), x(x_), y(y_), w(w_), h(h_),
        
-          input_elem (x + 20,  y + h - 60,  260, 35, "Элемент ряда"),
-          input_count(x + 20,  y + h - 110, 260, 35, "Кол-во предсказаний"),
-          btn_add    (x + 20,  y + h - 160, 120, 35, COLOR_GREEN, "Добавить",  {1,1,1}),
-          btn_remove (x + 150, y + h - 160, 120, 35, COLOR_RED,   "Удалить",   {1,1,1}),
-          btn_clear  (x + 20,  y + h - 210, 120, 35, COLOR_RED,   "Очистить",  {1,1,1}),
-          btn_predict(x + 150, y + h - 210, 120, 35, COLOR_GREEN, "Предсказать",{1,1,1}),
+          input_elem (x + 180,  y + h - 60,  260, 35, "Элемент ряда"),
+          input_count(x + 180,  y + h - 110, 260, 35, "Кол-во предсказаний"),
+          btn_add    (x + 80,  y + h - 160, 120, 35, COLOR_GREEN, "Добавить",  {1,1,1}),
+          btn_remove (x + 250, y + h - 160, 120, 35, COLOR_RED,   "Удалить",   {1,1,1}),
+          btn_clear  (x + 80,  y + h - 210, 120, 35, COLOR_RED,   "Очистить",  {1,1,1}),
+          btn_predict(x + 250, y + h - 210, 120, 35, COLOR_GREEN, "Предсказать",{1,1,1}),
       
-          list_auto  (x + 20,  y + h - 270, 260, "Авт. наборы"),
-          btn_load_auto(x + 20, y + h - 380, 260, 35, COLOR_BLUE, "Загрузить", {1,1,1}),
+          list_auto  (x + 180,  y + h - 270, 260, "Авт. наборы"),
+          btn_load_auto(x + 180, y + h - 380, 260, 35, COLOR_BLUE, "Загрузить", {1,1,1}),
       
-          list_seed       (x + 320, y + h/2, 280, h - 40),
-          list_predictions(x + 640, y + h/2, 280, h - 40)
+          list_seed       (x + 520, y + h/2, 280, h - 40),
+          list_predictions(x + 840, y + h/2, 280, h - 40)
     {
         list_seed.setShowScrollbar(true);
         list_predictions.setShowScrollbar(true);
@@ -106,9 +106,9 @@ public:
         renderer.draw({x, y}, {w, h}, COLOR_BG);
 
 
-        textRenderer.drawText("Ввод ряда",       x + 20,  y + h - 20, 1, glm::vec3(0.9f));
-        textRenderer.drawText("Исходный ряд",     x + 320, y + h - 20, 1, glm::vec3(0.9f));
-        textRenderer.drawText("Предсказания",     x + 640, y + h - 20, 1, glm::vec3(0.9f));
+        textRenderer.drawText("Ввод ряда",       x + 80,  y + h - 20, 1, glm::vec3(0.9f));
+        textRenderer.drawText("Исходный ряд",     x + 520, y + h - 20, 1, glm::vec3(0.9f));
+        textRenderer.drawText("Предсказания",     x + 840, y + h - 20, 1, glm::vec3(0.9f));
 
         btn_add.draw(renderer, textRenderer);
         btn_remove.draw(renderer, textRenderer);
@@ -142,13 +142,13 @@ public:
 private:
     void refresh_seed() {
         list_seed.clearItems();
-        for (size_t i = 0; i < model.seed.getLength(); ++i)
-            list_seed.addItem(std::to_string(model.seed.get(i)));
+        for (const auto& elem: model.seed)
+            list_seed.addItem(std::format("{:.2f}", elem));
     }
 
     void refresh_predictions() {
         list_predictions.clearItems();
-        for (size_t i = 0; i < model.predictions.getLength(); ++i)
-            list_predictions.addItem(std::to_string(model.predictions.get(i)));
+        for (const auto& elem: model.predictions)
+            list_predictions.addItem(std::format("{:.2f}", elem));
     }
 };

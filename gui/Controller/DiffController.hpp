@@ -52,7 +52,7 @@ public:
         model.seed.clear();
         model.predictions.clear();
         const auto& c = model.auto_cases.get(index);
-        for (size_t i = 0; i < c.seed.getLength(); ++i)
-            model.seed.append(c.seed.get(i));
+        for (const auto& elem : *(c.seed))
+            model.seed.append(elem);
     }
 };

@@ -16,6 +16,8 @@ set(HEADER_DIR
     ${SRC}Generator
     ${SRC}LazySequence
     ${SRC}Cardinal
+    ${SRC}Difference
+    ${SRC}Stream
     ${CMAKE_CURRENT_SOURCE_DIR}/externals/lab_2/src
     ${CMAKE_CURRENT_SOURCE_DIR}/externals/lab_2/src/Sequence
     ${CMAKE_CURRENT_SOURCE_DIR}/externals/lab_2/src/Sequence/LazySequence/
@@ -30,6 +32,10 @@ set(HEADER_FILES
     ${SRC}Optional/Optional.hpp
     ${SRC}Exception/Exception.hpp
     ${SRC}Generator/Generator.hpp
+    ${SRC}LazySequence/LazySequence.hpp
+    ${SRC}Cardinal/Cardinal.hpp
+    ${SRC}Difference/Difference.hpp
+    ${SRC}Stream/Stream.hpp
 )
 
 set(TEMPLATE_FILES
@@ -73,13 +79,18 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 
 add_executable(main
     ${GUI}main.cpp
-
+    ${GUI}Panel/DiffPanel.hpp
+    ${GUI}Panel/TabsPanel.hpp
+    ${GUI}View/TestView.hpp
+    ${GUI}Controller/TestController.hpp
+    ${GUI}Model/TestModel.hpp
 )
 
 target_link_libraries(main PRIVATE
     ${PROJECT_NAME}
     Lab_2
     OpenGUI
+    gtest
 )
 
 target_include_directories(main PUBLIC
@@ -87,6 +98,7 @@ target_include_directories(main PUBLIC
     ${GUI}View/
     ${GUI}Controller/
     ${GUI}Model/
+    ${GUI}Panel/
     ${PROJECT_NAME}
 )
 
