@@ -79,3 +79,63 @@ TEST(LazySequence, GetOutOfRangeThrows) {
     LazySequence<int> seq(items, 3);
     EXPECT_THROW(seq.get(5), IndexOutOfRange);
 }
+
+TEST(LazySequence, FiniteSequenceHasFiniteLength) {
+    int items[] = {1, 2, 3};
+    LazySequence<int> seq(items, 3);
+    Cardinal len = seq.get_length();
+    EXPECT_FALSE(len.is_infinite());
+    EXPECT_EQ(len.get_value(), 3);
+}
+ 
+TEST(LazySequence, EmptySequenceHasFiniteLengthZero) {
+    LazySequence<int> seq;
+    Cardinal len = seq.get_length();
+    EXPECT_FALSE(len.is_infinite());
+    EXPECT_EQ(len.get_value(), 0);
+}
+ 
+TEST(LazySequence, InfiniteSequenceHasInfiniteLength) {
+    ArraySequence<int> seed;
+    seed.append(1); seed.append(1);
+    LazySequence<int> fib(
+        [](const Sequence<int>& w) { return w.get(0) + w.get(1); },
+        seed, 2
+    );
+    Cardinal len = fib.get_length();
+    EXPECT_TRUE(len.is_infinite());
+}
+ 
+TEST(LazySequence, FiniteLengthsAreEqual) {
+    int a[] = {1, 2, 3};
+    int b[] = {4, 5, 6};
+    LazySequence<int> seqA(a, 3);
+    LazySequence<int> seqB(b, 3);
+    EXPECT_TRUE(seqA.get_length() == seqB.get_length());
+}
+ 
+TEST(LazySequence, InfiniteLengthsAreEqual) {
+    ArraySequence<int> seed;
+    seed.append(1); seed.append(1);
+    LazySequence<int> fib1(
+        [](const Sequence<int>& w) { return w.get(0) + w.get(1); },
+        seed, 2
+    );
+    LazySequence<int> fib2(
+        [](const Sequence<int>& w) { return w.get(0) + w.get(1); },
+        seed, 2
+    );
+    EXPECT_TRUE(fib1.get_length() == fib2.get_length());
+}
+ 
+TEST(LazySequence, FiniteAndInfiniteLengthsAreNotEqual) {
+    int items[] = {1, 2, 3};
+    LazySequence<int> finite(items, 3);
+    ArraySequence<int> seed;
+    seed.append(1); seed.append(1);
+    LazySequence<int> infinite(
+        [](const Sequence<int>& w) { return w.get(0) + w.get(1); },
+        seed, 2
+    );
+    EXPECT_FALSE(finite.get_length() == infinite.get_length());
+}
