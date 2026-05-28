@@ -2,6 +2,7 @@
 #include <functional>
 #include <stdexcept>
 #include "Optional.hpp"
+#include "Sequence.hpp"
 
 template<typename T>
 class IGenerator{
@@ -9,7 +10,8 @@ class IGenerator{
 
     virtual T get_next() = 0;
     virtual bool has_next() const = 0;
- 
+    virtual ~IGenerator() = default;
+
     Optional<T> try_get_next() {
         if (!has_next())
             return Optional<T>::none();
@@ -18,14 +20,14 @@ class IGenerator{
 };
 
 template<typename T>
-class FiniteGenerator: IGenerator<T>{
+class FiniteGenerator: public IGenerator<T>{
     private:
     Sequence<T>& seq_;
     size_t pos_;
 
     public:
 
-    FiniteGenerator(Sequence<T>& seq) : seq_(seq), pos(0){
+    FiniteGenerator(Sequence<T>& seq) : seq_(seq), pos_(0){
     }
     bool has_next() const override {
         return pos_ < seq_.getLength();
@@ -35,7 +37,7 @@ class FiniteGenerator: IGenerator<T>{
         if(!has_next()){
             throw InvalidNextValue();
         }
-        seq.get(pos_++);
+        return seq_.get(pos_++);
     }
 };
 
@@ -124,8 +126,8 @@ class ConcatGenerator : public IGenerator<T> {
         if (!has_next())
             throw InvalidNextValue();
         if (first_->has_next())
-            return first_->getNext();
-        return second_->getNext();
+            return first_->get_next();
+        return second_->get_next();
     }
 };
 
@@ -147,11 +149,11 @@ class AppendGenerator : public IGenerator<T>{
     }
 
 
-    T getNext() override {
+    T get_next() override {
         if (!has_next())
             throw InvalidNextValue();
         if (source_->has_next())
-            return source_->getNext();
+            return source_->get_next();
         itemed_ = true;
         return item_;
     }
@@ -177,14 +179,14 @@ class PrependGenerator : public IGenerator<T>{
     }
 
 
-    T getNext() override {
+    T get_next() override {
         if (!has_next())
             throw InvalidNextValue();
         if (!itemed_){
             itemed_ = true;
             return item_;
         }
-        return source_->getNext();
+        return source_->get_next();
         
     }
 };
@@ -201,15 +203,50 @@ class ZipGenerator : public IGenerator<std::pair<T, U>>{
     ZipGenerator(IGenerator<T>* left, IGenerator<U>* right)
         : left_(left), right_(right) {}
 
+    ~ZipGenerator(){
+        delete left_;
+        delete right_;
+    }
+
     bool has_next() const override{
         return left_->has_next() && right_->has_next();
     }
 
-    std::pair<T, U> getNext() override{
-        if(!has_next){
+    std::pair<T, U> get_next() override{
+        if(!has_next()){
             throw InvalidNextValue();
         }
 
-         return { left_->getNext(), right_->getNext() };
+         return { left_->get_next(), right_->get_next() };
     }
-}
+};
+
+template <typename T>
+class ReccurentGenerator : public IGenerator<T>{
+    private:
+
+    ListSequence<T> buffer_;
+    size_t buffer_size_;
+    std::function<T(const Sequence<T>&)> reccurent_rule_;
+
+
+    public:
+
+    ReccurentGenerator(std::function<T(const Sequence<T>&)> rule, const Sequence<T>& seed, size_t k): reccurent_rule_(rule), buffer_size_(k){
+        if(seed.getLength() != k)
+            throw InvalidArgument();
+        buffer_ = ListSequence<T>();
+        for (auto& elem : seed)
+            buffer_.append(elem);
+    }
+
+    bool has_next() const override { return true; }
+
+    T get_next() override { 
+        T next = reccurent_rule_(buffer_);
+        buffer_.popAt(0);
+        buffer_.append(next);
+        return next;
+    }
+
+};
