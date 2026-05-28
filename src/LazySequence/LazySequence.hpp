@@ -89,5 +89,34 @@ class LazySequence{
  
     void materialize(size_t count) { materialize_up_to(count - 1); }
 
+    LazySequence<T>& append(const T& item) {
+        ensure_generator();
+        generator_ = new AppendGenerator<T>(generator_, item);
+        is_infinite_ = false;
+        return *this;
+    }
+ 
+    LazySequence<T>& prepend(const T& item) {
+        ensure_generator();
+        generator_ = new PrependGenerator<T>(item, generator_);
+        return *this;
+    }
+ 
+    LazySequence<T>& concat(LazySequence<T>& other) {
+        ensure_generator();
+        IGenerator<T>* other_gen = other.has_generator()
+            ? other.generator_->clone()
+            : new FiniteGenerator<T>(other.cache_);
+        generator_ = new ConcatGenerator<T>(generator_, other_gen);
+        is_infinite_ = is_infinite_ || other.is_infinite_;
+        return *this;
+    }
+ 
+    LazySequence<T>& where(std::function<bool(T)> predicate) {
+        ensure_generator();
+        generator_ = new WhereGenerator<T>(generator_, predicate);
+        return *this;
+    }
+
     
 };
