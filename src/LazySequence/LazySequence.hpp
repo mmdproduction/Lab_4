@@ -33,15 +33,20 @@ class LazySequence{
     
     public:
 
-    LazySequence() : is_infinite_(false){}
+    LazySequence() : generator_(nullptr), is_infinite_(false){}
 
-    LazySequence(std::initializer_list list): cache_(list), is_infinite_(false){}
+    LazySequence(std::initializer_list<T> list): generator_(nullptr), cache_(list), is_infinite_(false){}
 
-    LazySequence(T* items, size_t count): cache_(items, count), is_infinite_(false){}
+    LazySequence(T* items, size_t count): generator_(nullptr),  cache_(items, count), is_infinite_(false){}
 
-    LazySequence(const Sequence<T>& other) : cache_(other), is_infinite_(false){}
+    LazySequence(Sequence<T>& seq) : generator_(nullptr), is_infinite_(false) {
+        for (size_t i = 0; i < seq.getLength(); ++i)
+            cache_.append(seq.get(i));
+    }
 
-    LazySequence(std::function<T(const Sequence<T>&)> rule, const Sequence<T>& seed, size_t k): is_infinite_(true), cache_(seed){
+    LazySequence(std::function<T(const Sequence<T>&)> rule, const Sequence<T>& seed, size_t k): is_infinite_(true) {
+        for (const auto& elem : seed)
+            cache_.append(elem);
         generator_ = new ReccurentGenerator<T>(rule, seed, k);
         }
 
@@ -51,7 +56,8 @@ class LazySequence{
     LazySequence(const LazySequence<T>& other)
         : is_infinite_(other.is_infinite_),
           generator_(other.generator_ ? other.generator_->clone() : nullptr) {
-            cache_ = ArraySequence<T>(other.cache_);
+        for (const auto& elem : other.cache_)
+            cache_.append(elem);
     }
 
     LazySequence<T>& operator=(const LazySequence<T>& other) {
@@ -82,6 +88,13 @@ class LazySequence{
         if (cache_.getLength() == 0 && !has_generator())
             throw EmptySequence();
         return cache_.getLast();
+    }
+
+    Cardinal get_length() const {
+    if (is_infinite_)
+        return Cardinal::infinite();
+    return Cardinal::finite(cache_.getLength());
+    
     }
  
     size_t get_materialized_count() const { return cache_.getLength(); }
@@ -140,6 +153,6 @@ class LazySequence{
         result.is_infinite_ = is_infinite_ && other.is_infinite_;
         return result;
     }
-    
+
 
 };

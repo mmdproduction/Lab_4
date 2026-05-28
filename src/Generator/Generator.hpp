@@ -186,7 +186,7 @@ class AppendGenerator : public IGenerator<T>{
 
     IGenerator<T>* clone() const override {
         auto* g = new AppendGenerator<T>(source_->clone(), item_);
-        g->emitted_ = emitted_;
+        g->itemed_ = itemed_;
         return g;
     }
 
@@ -223,7 +223,7 @@ class PrependGenerator : public IGenerator<T>{
 
     IGenerator<T>* clone() const override {
         auto* g = new PrependGenerator<T>(item_, source_->clone());
-        g->emitted_ = emitted_;
+        g->itemed_ = itemed_;
         return g;
     }
 };
@@ -276,8 +276,7 @@ class ReccurentGenerator : public IGenerator<T>{
     ReccurentGenerator(std::function<T(const Sequence<T>&)> rule, const Sequence<T>& seed, size_t k): reccurent_rule_(rule), buffer_size_(k){
         if(seed.getLength() != k)
             throw InvalidArgument();
-        buffer_ = ListSequence<T>();
-        for (auto& elem : seed)
+        for (const auto& elem : seed)
             buffer_.append(elem);
     }
 

@@ -14,6 +14,8 @@ set(HEADER_DIR
     ${SRC}Optional
     ${SRC}Exception
     ${SRC}Generator
+    ${SRC}LazySequence
+    ${SRC}Cardinal
     ${CMAKE_CURRENT_SOURCE_DIR}/externals/lab_2/src
     ${CMAKE_CURRENT_SOURCE_DIR}/externals/lab_2/src/Sequence
     ${CMAKE_CURRENT_SOURCE_DIR}/externals/lab_2/src/Sequence/LazySequence/
@@ -40,6 +42,7 @@ set(SOURCE_FILES
 
 set(TEST_SOURCE_FILES
     tests/OptionalTest.cpp
+    tests/LazySequenceTest.cpp
 )
 
 add_subdirectory(externals/lab_2 lab_2_build)
