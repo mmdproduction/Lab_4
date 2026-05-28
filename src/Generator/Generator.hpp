@@ -12,11 +12,14 @@ class IGenerator{
     virtual bool has_next() const = 0;
     virtual ~IGenerator() = default;
 
+
     Optional<T> try_get_next() {
         if (!has_next())
             return Optional<T>::none();
         return Optional<T>::some(get_next());
     }
+
+    virtual IGenerator<T>* clone() const = 0;
 };
 
 template<typename T>
@@ -39,6 +42,13 @@ class FiniteGenerator: public IGenerator<T>{
         }
         return seq_.get(pos_++);
     }
+
+    IGenerator<T>* clone() const override {
+        auto* g = new FiniteGenerator<T>(seq_);
+        g->pos_ = pos_;
+        return g;
+    }
+
 };
 
 template <typename T, typename U>
@@ -61,6 +71,10 @@ class MapGenerator : public IGenerator<U> {
         if (!has_next())
             throw InvalidNextValue();
         return mapper_(source_->get_next());
+    }
+
+    IGenerator<U>* clone() const override {
+        return new MapGenerator<T, U>(source_->clone(), mapper_);
     }
  
 };
@@ -103,6 +117,14 @@ class WhereGenerator : public IGenerator<T> {
         buffered_ = false;
         return buffer_.value();
     }
+
+
+    IGenerator<T>* clone() const override {
+        auto* g = new WhereGenerator<T>(source_->clone(), predicate_);
+        g->buffer_ = buffer_;
+        g->buffered_ = buffered_;
+        return g;
+    }
 };
 
 template <typename T>
@@ -128,6 +150,10 @@ class ConcatGenerator : public IGenerator<T> {
         if (first_->has_next())
             return first_->get_next();
         return second_->get_next();
+    }
+
+    IGenerator<T>* clone() const override {
+        return new ConcatGenerator<T>(first_->clone(), second_->clone());
     }
 };
 
@@ -158,6 +184,11 @@ class AppendGenerator : public IGenerator<T>{
         return item_;
     }
 
+    IGenerator<T>* clone() const override {
+        auto* g = new AppendGenerator<T>(source_->clone(), item_);
+        g->emitted_ = emitted_;
+        return g;
+    }
 
 };
 
@@ -189,6 +220,12 @@ class PrependGenerator : public IGenerator<T>{
         return source_->get_next();
         
     }
+
+    IGenerator<T>* clone() const override {
+        auto* g = new PrependGenerator<T>(item_, source_->clone());
+        g->emitted_ = emitted_;
+        return g;
+    }
 };
 
 template <typename T, typename U>
@@ -218,6 +255,10 @@ class ZipGenerator : public IGenerator<std::pair<T, U>>{
         }
 
          return { left_->get_next(), right_->get_next() };
+    }
+
+    IGenerator<std::pair<T, U>>* clone() const override {
+        return new ZipGenerator<T, U>(left_->clone(), right_->clone());
     }
 };
 
@@ -249,4 +290,7 @@ class ReccurentGenerator : public IGenerator<T>{
         return next;
     }
 
+    IGenerator<T>* clone() const override {
+        return new ReccurentGenerator<T>(reccurent_rule_, buffer_, buffer_size_);
+    }
 };
