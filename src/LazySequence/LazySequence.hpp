@@ -118,5 +118,28 @@ class LazySequence{
         return *this;
     }
 
+
+    template<typename U>
+    LazySequence<U> map(std::function<U(T)> mapper) {
+        ensure_generator();
+        LazySequence<U> result;
+        result.generator_ = new MapGenerator<T, U>(generator_->clone(), mapper);
+        result.is_infinite_ = is_infinite_;
+        return result;
+    }
+ 
+    template<typename U>
+    LazySequence<std::pair<T, U>> zip(LazySequence<U>& other) {
+        ensure_generator();
+        IGenerator<T>* left  = generator_->clone();
+        IGenerator<U>* right = other.has_generator()
+            ? other.generator_->clone()
+            : new FiniteGenerator<U>(other.cache_);
+        LazySequence<std::pair<T, U>> result;
+        result.generator_ = new ZipGenerator<T, U>(left, right);
+        result.is_infinite_ = is_infinite_ && other.is_infinite_;
+        return result;
+    }
     
+
 };
