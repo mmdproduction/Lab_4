@@ -84,3 +84,9 @@ class EndOfStream : public Exception{
     explicit EndOfStream( const std::source_location& loc = std::source_location::current())
         : Exception(loc.function_name(), loc.file_name(), loc.line(), "Конец потока чтения!"){}
 };
+
+class EmptyStream : public Exception{
+    public:
+    explicit EmptyStream( const std::source_location& loc = std::source_location::current())
+        : Exception(loc.function_name(), loc.file_name(), loc.line(), "Пустой поток!"){}
+};
