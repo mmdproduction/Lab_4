@@ -71,3 +71,9 @@ class InvalidNextValue : public Exception{
     explicit InvalidNextValue( const std::source_location& loc = std::source_location::current())
         : Exception(loc.function_name(), loc.file_name(), loc.line(), "Недопустимое обращение к слудующему элементу!"){}
 };
+
+class InvalidFilePath : public Exception{
+    public:
+    InvalidFilePath(const std::string path, const std::source_location& loc = std::source_location::current())
+        : Exception(loc.function_name(), loc.file_name(), loc.line(), 
+        std::format("Невозможно открыть файл! Путь: {}!", path)){}

@@ -48,7 +48,13 @@ class LazySequence{
         for (const auto& elem : seed)
             cache_.append(elem);
         generator_ = new ReccurentGenerator<T>(rule, seed, k);
-        }
+    }
+    
+    LazySequence(Sequence<T>& seed, DifferenceGenerator<T>* gen)
+        : is_infinite_(true), generator_(gen) {
+        for (size_t i = 0; i < seed.getLength(); ++i)
+            cache_.append(seed.get(i));
+    }
 
     ~LazySequence() { delete generator_; }
 
@@ -94,7 +100,7 @@ class LazySequence{
     if (is_infinite_)
         return Cardinal::infinite();
     return Cardinal::finite(cache_.getLength());
-    
+
     }
  
     size_t get_materialized_count() const { return cache_.getLength(); }

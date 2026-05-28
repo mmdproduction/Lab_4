@@ -293,3 +293,51 @@ class ReccurentGenerator : public IGenerator<T>{
         return new ReccurentGenerator<T>(reccurent_rule_, buffer_, buffer_size_);
     }
 };
+
+
+template <typename T>
+class DefferenceGenerator : public {
+    private:
+    ArraySequence<T>* diagonal_;
+ 
+    void buildDiagonal(Sequence<T>& seed) {
+        diagonal_ = new ArraySequence<T>();
+        ArraySequence<T>* level = new ArraySequence<T>();
+        for (const auto& elem : seed)
+            level->append(elem);
+        diagonal_->append(level->getLast());
+        while (level->getLength() > 1) {
+            ArraySequence<T>* next = new ArraySequence<T>();
+            for (size_t i = 0; i + 1 < level->getLength(); ++i)
+                next->append(level->get(i + 1) - level->get(i));
+            diagonal_->append(next->getLast());
+            delete level;
+            level = next;
+        }
+        delete level;
+    }
+
+    public:
+
+    DifferenceGenerator(Sequence<T>& seed) {
+        if (seed.getLength() == 0)
+            throw InvalidArgument();
+        buildDiagonal(seed);
+    }
+ 
+    ~DifferenceGenerator() { delete diagonal_; }
+ 
+    bool has_next() const override { return true; }
+ 
+    T get_next() override {
+        size_t len = diagonal_->getLength();
+        for (size_t i = len - 1; i > 0; --i)
+            diagonal_->set(diagonal_->get(i - 1) + diagonal_->get(i), i - 1);
+        return diagonal_->get(0);
+    }
+ 
+    IGenerator<T>* clone() const override {
+        return new DifferenceGenerator<T>(*diagonal_);
+    }
+
+}
