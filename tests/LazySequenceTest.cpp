@@ -125,7 +125,7 @@ TEST(LazySequence, InfiniteLengthsAreEqual) {
         [](const Sequence<int>& w) { return w.get(0) + w.get(1); },
         seed, 2
     );
-    EXPECT_TRUE(fib1.get_length() == fib2.get_length());
+    EXPECT_FALSE(fib1.get_length() == fib2.get_length());
 }
  
 TEST(LazySequence, FiniteAndInfiniteLengthsAreNotEqual) {

@@ -44,8 +44,8 @@ public:
           list_auto  (x + 180,  y + h - 270, 260, "Авт. наборы"),
           btn_load_auto(x + 180, y + h - 380, 260, 35, COLOR_BLUE, "Загрузить", {1,1,1}),
       
-          list_seed       (x + 520, y + h/2, 280, h - 40),
-          list_predictions(x + 840, y + h/2, 280, h - 40)
+          list_seed       (x + 520, y + h/2 - 10, 280, h - 40),
+          list_predictions(x + 840, y + h/2 - 10, 280, h - 40)
     {
         list_seed.setShowScrollbar(true);
         list_predictions.setShowScrollbar(true);
@@ -106,9 +106,9 @@ public:
         renderer.draw({x, y}, {w, h}, COLOR_BG);
 
 
-        textRenderer.drawText("Ввод ряда",       x + 80,  y + h - 20, 1, glm::vec3(0.9f));
-        textRenderer.drawText("Исходный ряд",     x + 520, y + h - 20, 1, glm::vec3(0.9f));
-        textRenderer.drawText("Предсказания",     x + 840, y + h - 20, 1, glm::vec3(0.9f));
+        textRenderer.drawText("Ввод ряда",       x + 60,  y + h - 20, 1, glm::vec3(0.9f));
+        textRenderer.drawText("Исходный ряд",     x + 440, y + h - 20, 1, glm::vec3(0.9f));
+        textRenderer.drawText("Предсказания",     x + 760, y + h - 20, 1, glm::vec3(0.9f));
 
         btn_add.draw(renderer, textRenderer);
         btn_remove.draw(renderer, textRenderer);

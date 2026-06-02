@@ -34,7 +34,7 @@ struct DiffModel {
 
         
         AutoCase arith;
-        arith.name = "Арифм. прогрессия";
+        arith.name = "Арифм.";
         for (int i = 0; i < 5; ++i) arith.seed->append(2 + 3 * i);
         auto_cases.append(arith);
     }

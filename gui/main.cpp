@@ -42,23 +42,23 @@ int main(){
     events.setScrollCallback(window.getWindow());
 
 
-    // TestModel testModel;
-    // TestController testCtrl(testModel);
-    // TestView testView(testModel, 0, 0, window.getWidth(), window.getHeight() - 40);
+    TestModel testModel;
+    TestController testCtrl(testModel);
+    TestView testView(testModel, 0, 0, window.getWidth(), window.getHeight() - 40);
 
     TabsPanel tabsPanel = TabsPanel(0, window.getHeight() - 40, window.getWidth(), 40);
     DiffPanel dfPanel = DiffPanel(0, 0, window.getWidth(), window.getHeight() - 40);
 
 
-    // testModel.onTestFinished = [&](const TestResultData& data) {
-    // std::string text = std::string(data.passed ? "[OK]   " : "[FAIL] ") + data.name;
-    // testView.addResult(text, data.passed);
-    // };
-    // testView.onRunAll = [&]{ testView.clearList(); testCtrl.onRunAll(); };
-    // testView.onClear  = [&]{ testCtrl.onClear(testView);};
+    testModel.onTestFinished = [&](const TestResultData& data) {
+    std::string text = std::string(data.passed ? "[OK]   " : "[FAIL] ") + data.name;
+    testView.addResult(text, data.passed);
+    };
+    testView.onRunAll = [&]{ testView.clearList(); testCtrl.onRunAll(); };
+    testView.onClear  = [&]{ testCtrl.onClear(testView);};
 
     tabsPanel.addTab("Разност. схемы");
-    // tabsPanel.addTab("Тесты");
+    tabsPanel.addTab("Тесты");
 
     float lastTime = glfwGetTime();
     while(!window.isWindowShouldClose()){
@@ -68,6 +68,9 @@ int main(){
 
         if(tabsPanel.getActive() == 0){
             dfPanel.onEvent(events);
+        }
+        if(tabsPanel.getActive() == 1){
+            testView.onEvent(events);
         }
 
         double now = glfwGetTime();
@@ -81,11 +84,20 @@ int main(){
         if(tabsPanel.getActive() == 0){
             dfPanel.draw(render, textRender);
         }
+
+        if(tabsPanel.getActive() == 1){
+            testView.draw(render, textRender);
+        }
+
         
         
         window.swapBuffers();
         if(tabsPanel.getActive() == 0){
             dfPanel.update(dt);
+        }
+        if(tabsPanel.getActive() == 1){
+            testCtrl.update(testView);
+            testView.update(dt);
         }
        
         tabsPanel.update(dt);

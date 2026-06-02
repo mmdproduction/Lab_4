@@ -18,6 +18,7 @@ set(HEADER_DIR
     ${SRC}Cardinal
     ${SRC}Difference
     ${SRC}Stream
+    ${SRC}Test
     ${CMAKE_CURRENT_SOURCE_DIR}/externals/lab_2/src
     ${CMAKE_CURRENT_SOURCE_DIR}/externals/lab_2/src/Sequence
     ${CMAKE_CURRENT_SOURCE_DIR}/externals/lab_2/src/Sequence/LazySequence/
@@ -36,19 +37,22 @@ set(HEADER_FILES
     ${SRC}Cardinal/Cardinal.hpp
     ${SRC}Difference/Difference.hpp
     ${SRC}Stream/Stream.hpp
+    ${SRC}Test/TestRunner.hpp
 )
 
 set(TEMPLATE_FILES
-
+    
 )
 
 set(SOURCE_FILES
-    
+    ${SRC}Test/TestRunner.cpp
 )
 
 set(TEST_SOURCE_FILES
     tests/OptionalTest.cpp
     tests/LazySequenceTest.cpp
+    tests/ListSequenceTest.cpp
+    tests/DynamicArrayTest.cpp
 )
 
 add_subdirectory(externals/lab_2 lab_2_build)
@@ -84,6 +88,7 @@ add_executable(main
     ${GUI}View/TestView.hpp
     ${GUI}Controller/TestController.hpp
     ${GUI}Model/TestModel.hpp
+    ${TEST_SOURCE_FILES}
 )
 
 target_link_libraries(main PRIVATE
@@ -91,6 +96,7 @@ target_link_libraries(main PRIVATE
     Lab_2
     OpenGUI
     gtest
+    
 )
 
 target_include_directories(main PUBLIC
@@ -115,7 +121,10 @@ target_link_libraries(test_4 PRIVATE
 )
 
 
-target_include_directories(test_4 PRIVATE ${HEADER_DIR})
+target_include_directories(test_4 PRIVATE
+    ${HEADER_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests
+)
 
 include(GoogleTest)
 gtest_discover_tests(test_4
