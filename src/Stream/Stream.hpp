@@ -20,6 +20,10 @@ public:
     virtual T read() = 0;
     virtual bool is_end_of_stream() const = 0;
     virtual size_t get_position() const = 0;
+    IReadOnlyStream<T>& operator>>(const T& item) {
+        item = read();
+        return this*;
+    }
 };
 
 
@@ -30,6 +34,10 @@ public:
     virtual void write(const T& item) = 0;
     virtual size_t get_position() const = 0;
     virtual void close() = 0;
+    WriteOnlyStream<T>& operator<<(const T& item) {
+        write(item);
+        return *this;
+    }
 };
 
 
@@ -38,7 +46,7 @@ class SequenceReadOnlyStream : public IReadOnlyStream<T> {
     const Sequence<T>* seq_;
     size_t pos_;
 public:
-    explicit SequenceReadOnlyStream(const Sequence<T>* seq) : seq_(seq), pos_(0) {}
+    SequenceReadOnlyStream(const Sequence<T>* seq) : seq_(seq), pos_(0) {}
 
     T read() override {
         if (is_end_of_stream()) throw EndOfStream();
@@ -57,7 +65,7 @@ class LazyReadOnlyStream : public IReadOnlyStream<T> {
     LazySequence<T>* lazy_;
     size_t pos_;
 public:
-    explicit LazyReadOnlyStream(LazySequence<T>* lazy) : lazy_(lazy), pos_(0) {}
+    LazyReadOnlyStream(LazySequence<T>* lazy) : lazy_(lazy), pos_(0) {}
 
     T read() override {
         if (is_end_of_stream()) throw EndOfStream();
@@ -158,78 +166,86 @@ public:
 
 };
 
-
-
 template <typename T>
-class WriteOnlyStream{
-    private:
+class FileWriteOnlyStream : public IWriteOnlyStream<T> {
+private:
+    FILE* file_;
+    Serializer<T> serializer_;
+    size_t pos_;
+    std::string path_;
 
-    enum class Sink {Sequence, File, Buffer};
+public:
+    FileWriteOnlyStream(const std::string& path, Serializer<T> serializer) 
+        : file_(nullptr), serializer_(serializer), pos_(0), path_(path) 
+    {
+        open();
+    }
 
-    Sequence<T>*     seq_;
-    std::string      buffer_;
-    size_t           pos_;
-    Sink             sink_;
-    std::string      path_;
-    std::ofstream    file_;
-    Serializer<T>    serializer_;
-
-
-    public:
-
-     WriteOnlyStream(Sequence<T>* seq)
-        : seq_(seq), pos_(0), sink_(Sink::Sequence) {}
- 
-    
-    WriteOnlyStream(const std::string& path, Serializer<T> serializer)
-        : seq_(nullptr), pos_(0), sink_(Sink::File),
-          path_(path), serializer_(serializer) {}
- 
-    WriteOnlyStream(Serializer<T> serializer)
-        : seq_(nullptr), pos_(0), sink_(Sink::Buffer),
-          serializer_(serializer) {}
+    ~FileWriteOnlyStream() override {
+        close();
+    }
 
     void open() {
-        if (sink_ == Sink::File) {
-            file_.open(path_);
-            if (!file_.is_open())
-                throw InvalidFilePath(path_);
+        if (file_) return; // Уже открыт
+        
+        file_ = fopen(path_.c_str(), "w");
+        if (!file_) {
+            throw InvalidFilePath(path_);
         }
     }
- 
-    void close() {
-        if (file_.is_open())
-            file_.close();
-    }
 
-    size_t write(const T& item) {
-        switch (sink_) {
-            case Sink::Sequence:
-                seq_->append(item);
-                break;
-            case Sink::File:
-                if (!file_.is_open())
-                    throw InvalidFilePath(path_);
-                file_ << serializer_(item) << "\n";
-                break;
-            case Sink::Buffer:
-                buffer_ += serializer_(item) + "\n";
-                break;
+    void write(const T& item) override {
+        if (!file_) {
+            throw std::runtime_error("File stream is not open");
         }
-        return ++pos_;
+        
+        std::string serialized = serializer_(item);
+        fprintf(file_, "%s\n", serialized.c_str());
+        ++pos_;
     }
 
-    WriteOnlyStream<T>& operator<<(const T& item) {
-        write(item);
-        return *this;
+    size_t get_position() const override { return pos_; }
+
+    void close() override {
+        if (file_) {
+            fclose(file_);
+            file_ = nullptr;
+        }
+    }
+};
+
+template <typename T>
+class SequenceWriteOnlyStream : public IWriteOnlyStream<T> {
+    Sequence<T>* seq_;
+    size_t pos_;
+public:
+    SequenceWriteOnlyStream(Sequence<T>* seq) : seq_(seq), pos_(0) {}
+
+    void write(const T& item) override {
+        seq_->append(item);
+        ++pos_;
     }
 
-    size_t get_position() const {return pos_; }
+    size_t get_position() const override { return pos_; }
+    void close() override {}
+};
 
-    const std::string& get_buffer() const {
-        if (sink_ != Sink::Buffer)
-            throw std::runtime_error("WriteOnlyStream: not a buffer stream");
-        return buffer_;
+template <typename T>
+class BufferWriteOnlyStream : public IWriteOnlyStream<T> {
+    std::string buffer_;
+    Serializer<T> serializer_;
+    size_t pos_;
+public:
+    BufferWriteOnlyStream(Serializer<T> serializer) 
+        : serializer_(serializer), pos_(0) {}
+
+    void write(const T& item) override {
+        buffer_ += serializer_(item) + "\n";
+        ++pos_;
     }
 
+    size_t get_position() const override { return pos_; }
+    void close() override {}
+
+    const std::string& get_buffer() const { return buffer_; }
 };
