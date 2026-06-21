@@ -12,26 +12,82 @@ using Deserializer = std::function<T(const std::string&)>;
 template<typename T>
 using Serializer = std::function<std::string(const T&)>;
 
+
 template <typename T>
-class ReadOnlyStream{
-private:
-    enum class Source { Sequence, Lazy, String, File };
- 
-    Sequence<T>*     seq_;
+class IReadOnlyStream {
+public:
+    virtual ~IReadOnlyStream() = default;
+    virtual T read() = 0;
+    virtual bool is_end_of_stream() const = 0;
+    virtual size_t get_position() const = 0;
+};
+
+
+template <typename T>
+class IWriteOnlyStream {
+public:
+    virtual ~IWriteOnlyStream() = default;
+    virtual void write(const T& item) = 0;
+    virtual size_t get_position() const = 0;
+    virtual void close() = 0;
+};
+
+
+template <typename T>
+class SequenceReadOnlyStream : public IReadOnlyStream<T> {
+    const Sequence<T>* seq_;
+    size_t pos_;
+public:
+    explicit SequenceReadOnlyStream(const Sequence<T>* seq) : seq_(seq), pos_(0) {}
+
+    T read() override {
+        if (is_end_of_stream()) throw EndOfStream();
+        return seq_->get(pos_++);
+    }
+
+    bool is_end_of_stream() const override {
+        return pos_ >= seq_->getLength();
+    }
+
+    size_t get_position() const override { return pos_; }
+};
+
+template <typename T>
+class LazyReadOnlyStream : public IReadOnlyStream<T> {
     LazySequence<T>* lazy_;
+    size_t pos_;
+public:
+    explicit LazyReadOnlyStream(LazySequence<T>* lazy) : lazy_(lazy), pos_(0) {}
+
+    T read() override {
+        if (is_end_of_stream()) throw EndOfStream();
+        return lazy_->get(pos_++); 
+    }
+
+    bool is_end_of_stream() const override {
+        return !lazy_->is_infinite() && pos_ >= lazy_->get_materialized_count();
+    }
+
+    size_t get_position() const override { return pos_; }
+};
+
+template <typename T>
+class BufferReadOnlyStream : public IReadableStream<T> {
     ArraySequence<T> buffer_;
-    size_t           pos_;
-    Source           source_;
-    std::string      path_;
-    std::ifstream    file_; //TODO _FILE_
-    Deserializer<T>  deserializer_;
- 
-    void parse_string(const std::string& data) {
+    size_t pos_;
+public:
+
+    BufferReadOnlyStream(const std::string& data, Deserializer<T> deserializer) : pos_(0) {
+        parse_string(data, deserializer);
+    }
+
+    private:
+    void parse_string(const std::string& data, Deserializer<T> deserializer) {
         std::string token;
         for (char c : data) {
             if (c == ' ' || c == '\n' || c == ',') {
                 if (!token.empty()) {
-                    buffer_.append(deserializer_(token));
+                    buffer_.append(deserializer(token));
                     token.clear();
                 }
             } else {
@@ -39,81 +95,69 @@ private:
             }
         }
         if (!token.empty())
-            buffer_.append(deserializer_(token));
-    }
- 
-    void load_from_file() {
-        std::string line;
-        while (std::getline(file_, line))
-            if (!line.empty())
-                buffer_.append(deserializer_(line));
+            buffer_.append(deserializer(token));
     }
 
     public:
-
-    ReadOnlyStream(Sequence<T>* seq)
-        : seq_(seq), lazy_(nullptr), pos_(0), source_(Source::Sequence) {}
- 
-    ReadOnlyStream(LazySequence<T>* lazy)
-        : seq_(nullptr), lazy_(lazy), pos_(0), source_(Source::Lazy) {}
- 
-    ReadOnlyStream(const std::string& data, Deserializer<T> deserializer)
-        : seq_(nullptr), lazy_(nullptr), pos_(0),
-          source_(Source::String), deserializer_(deserializer) {
-        parse_string(data);
+    T read() override {
+        if (is_end_of_stream()) throw EndOfStream();
+        return buffer_.get(pos_++);
     }
 
-    ReadOnlyStream(const std::string& path, Deserializer<T> deserializer, bool is_file)
-        : seq_(nullptr), lazy_(nullptr), pos_(0),
-          source_(Source::File), path_(path), deserializer_(deserializer) {}
- 
-    void open(){
-        if (source_ == Source::File) {
-            file_.open(path_);
-            if (!file_.is_open())
-                throw InvalidFilePath(path_);
-            load_from_file();
-            file_.close();
+    bool is_end_of_stream() const override {
+        return pos_ >= buffer_.getLength();
+    }
+
+    size_t get_position() const override { return pos_; }
+};
+
+template <typename T>
+class FileReadonlyStream: public IReadOnlyStream{
+    ArraySequence<T> buffer_;
+    size_t pos_;
+    Deserializer<T> deserializer_;
+
+    void load_data(const std::string& path) {
+        FILE* file_ = fopen(path.c_str(), "r");
+        if (!file_) {
+            throw InvalidFilePath(path);
         }
-    }
 
-    void close() {
-        if (file_.is_open())
-            file_.close();
-    }
+        char line[4096];
+        while (fgets(line, sizeof(line), file_)) {
+            std::string strLine(line);
 
-
-    bool is_end_of_stream() const {
-        switch (source_) {
-            case Source::Sequence: return pos_ >= seq_->getLength();
-            case Source::Lazy: return !lazy_->is_infinite() && pos_ >= lazy_->get_materialized_count();
-            case Source::String: 
-            case Source::File: return pos_ >= buffer_.getLength();
+            if (!strLine.empty() && strLine.back() == '\n') {
+                strLine.pop_back();
+            }
+            if (!strLine.empty()) {
+                buffer_.append(deserializer_(strLine));
+            }
         }
-        return true;
+        fclose(file_);
+        file_ = nullptr;
+    }
+public:
+    FileReadOnlyStream(const std::string& path, Deserializer<T> deserializer) : pos_(0), deserializer_(deserializer) {
+        load_data(path);
     }
 
-    T read(){
-        if (is_end_of_stream())
-            throw EndOfStream();
-        switch (source_)
-        {
-        case Source::Sequence : return seq_->get(pos_++);
-        case Source::Lazy : return  seq_->get(pos_++);
-        case Source::String :
-        case Source::File : return seq_->get(pos_++);
-        }
-        throw EndOfStream();
+    private:
+
+    public:
+    T read() override {
+        if (is_end_of_stream()) throw EndOfStream();
+        return buffer_.get(pos_++);
     }
 
-    ReadOnlyStream<T>& operator>>(T& value) {
-        value = read();
-        return *this;
+    bool is_end_of_stream() const override {
+        return pos_ >= buffer_.getLength();
     }
 
-    size_t get_position() const {return pos_; }
+    size_t get_position() const override { return pos_; }
 
 };
+
 
 
 template <typename T>
