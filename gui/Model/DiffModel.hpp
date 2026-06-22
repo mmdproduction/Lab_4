@@ -46,6 +46,7 @@ struct DiffModel {
 
         SequenceReadOnlyStream<double> input(&seed);
         SequenceWriteOnlyStream<double> output(&predictions);
-        
+
         predict<double>(input, output, predict_count);
+    }
 };
