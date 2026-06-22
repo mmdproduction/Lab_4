@@ -53,6 +53,7 @@ set(TEST_SOURCE_FILES
     tests/LazySequenceTest.cpp
     tests/ListSequenceTest.cpp
     tests/DynamicArrayTest.cpp
+    tests/GeneratorTest.cpp
 )
 
 add_subdirectory(externals/lab_2 lab_2_build)

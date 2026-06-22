@@ -222,7 +222,7 @@ class PrependGenerator : public IGenerator<T>{
     }
 
     IGenerator<T>* clone() const override {
-        auto* g = new PrependGenerator<T>(item_, source_->clone());
+        auto* g = new PrependGenerator<T>(source_->clone(), item_);
         g->itemed_ = itemed_;
         return g;
     }

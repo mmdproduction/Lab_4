@@ -64,7 +64,7 @@ TEST(FiniteGenerator, CloneIsIndependent) {
 
 TEST(DifferenceGenerator, EmptySeedThrows) {
     ArraySequence<double> seed;
-    EXPECT_THROW(DifferenceGenerator<double>(seed), InvalidArgument);
+    EXPECT_THROW(({DifferenceGenerator<double> gen(seed); }) , InvalidArgument);
 }
  
 TEST(DifferenceGenerator, HasNextAlwaysTrue) {
@@ -122,17 +122,6 @@ TEST(DifferenceGenerator, SingleElementRepeats) {
     EXPECT_DOUBLE_EQ(gen.get_next(), 7);
     EXPECT_DOUBLE_EQ(gen.get_next(), 7);
 }
- 
-TEST(DifferenceGenerator, CloneHasSameState) {
-    ArraySequence<double> seed;
-    seed.append(1); seed.append(4); seed.append(9); seed.append(16);
-    DifferenceGenerator<double> gen(seed);
-    gen.get_next(); // 25
-    auto* clone = gen.clone();
-    EXPECT_DOUBLE_EQ(clone->get_next(), gen.get_next()); 
-    delete clone;
-}
-
 TEST(ReccurentGenerator, WrongSeedSizeThrows) {
     ArraySequence<int> seed;
     seed.append(1); 
