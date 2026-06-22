@@ -20,9 +20,9 @@ public:
     virtual T read() = 0;
     virtual bool is_end_of_stream() const = 0;
     virtual size_t get_position() const = 0;
-    IReadOnlyStream<T>& operator>>(const T& item) {
+    IReadOnlyStream<T>& operator>>(T& item) {
         item = read();
-        return this*;
+        return *this;
     }
 };
 
@@ -34,7 +34,7 @@ public:
     virtual void write(const T& item) = 0;
     virtual size_t get_position() const = 0;
     virtual void close() = 0;
-    WriteOnlyStream<T>& operator<<(const T& item) {
+    IWriteOnlyStream<T>& operator<<(const T& item) {
         write(item);
         return *this;
     }
@@ -80,7 +80,7 @@ public:
 };
 
 template <typename T>
-class BufferReadOnlyStream : public IReadableStream<T> {
+class BufferReadOnlyStream : public IReadOnlyStream<T> {
     ArraySequence<T> buffer_;
     size_t pos_;
 public:
@@ -120,7 +120,7 @@ public:
 };
 
 template <typename T>
-class FileReadonlyStream: public IReadOnlyStream{
+class FileReadOnlyStream: public IReadOnlyStream<T> {
     ArraySequence<T> buffer_;
     size_t pos_;
     Deserializer<T> deserializer_;
@@ -143,7 +143,6 @@ class FileReadonlyStream: public IReadOnlyStream{
             }
         }
         fclose(file_);
-        file_ = nullptr;
     }
 public:
     FileReadOnlyStream(const std::string& path, Deserializer<T> deserializer) : pos_(0), deserializer_(deserializer) {

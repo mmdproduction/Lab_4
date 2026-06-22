@@ -1,4 +1,5 @@
 #pragma once
+#include"Stream.hpp"
 #include "LazySequence.hpp"
 #include "Difference.hpp"
 #include <string>
@@ -43,25 +44,8 @@ struct DiffModel {
         predictions.clear();
         if (seed.getLength() == 0) return;
 
-        ArraySequence<double> seed_copy;
-        for (size_t i = 0; i < seed.getLength(); ++i)
-            seed_copy.append(seed.get(i));
-
-        ReadOnlyStream<double> input(&seed_copy);
-        WriteOnlyStream<double> output([](const double& x) { return std::to_string(x); });
-        predict(input, output, predict_count);
-
-        const std::string& buf = output.get_buffer();
-        std::string token;
-        for (char c : buf) {
-            if (c == '\n') {
-                if (!token.empty()) {
-                    predictions.append(std::stod(token));
-                    token.clear();
-                }
-            } else {
-                token += c;
-            }
-        }
-    }
+        SequenceReadOnlyStream<double> input(&seed);
+        SequenceWriteOnlyStream<double> output(&predictions);
+        
+        predict<double>(input, output, predict_count);
 };
